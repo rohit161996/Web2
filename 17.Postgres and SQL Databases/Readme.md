@@ -35,21 +35,21 @@
 1. Data is stored in the form of a graph. Specially useful in cases where relationships need to be stored (social networks)
 2. Examples - Neo4j
 
-<img src="image-1.png" width=800px height=400px>
+<img src="images/image-1.png" width=800px height=400px>
 
 ## 3. Vector databases
 1. Stores data in the form of vectors.
 2. Useful in Machine learning.
 3. Examples - Pinecone.
 
-<img src="image-2.png" width=800px height=400px>
+<img src="images/image-2.png" width=800px height=400px>
 
 ## 4. SQL databases
 1. Stores data in the form of rows.
 2. Most full stack applications will use this
 3. Examples - MySQL, Postgres.
 
-<img src="image-3.png">
+<img src="images/image-3.png">
 
 
 # Step 2 - Why not NoSQL
@@ -59,7 +59,7 @@ You might’ve used `MongoDB`
  
 ## What is schemaless?
 - Different rows can have different `schema` (keys/types)
-<img src="image-4.png">
+<img src="images/image-4.png">
 
 ## Problems?
 1. Can lead to inconsistent database
@@ -184,7 +184,7 @@ postgresql://username:password@ep-broken-frost-69135494.us-east-2.aws.neon.tech/
 ```
 
 ## Connection String
-<img src="image-5.png" width=800px>
+<img src="images/image-5.png" width=800px>
 
 
 # Step 5: Using a library that let’s you connect and put data in it.
@@ -214,8 +214,8 @@ postgresql://username:password@ep-broken-frost-69135494.us-east-2.aws.neon.tech/
 ## Tables in SQL
 - A single database can have multiple tables inside. Think of them as collections in a MongoDB Collection.
 
-<img src="image-11.png" width=500px>
-<img src="image-12.png" width=300px>
+<img src="images/image-11.png" width=500px>
+<img src="images/image-12.png" width=300px>
 
 - Until now, we have a database that we can interact with. 
 - The next step in case of postgres is to define the `schema` of your tables.
