@@ -492,16 +492,25 @@
 <img src="image-13.png" width=700px>
 
 ### 1. Install prisma
+- Install the prisma package which is the ORM which we are using.
 ```bash
   npm install prisma
 ```
 
+- Go to the `neon.tech`, Go to the Projects -> `New Project` -> Name the database as `database-class-week-19`.
+
+- Click on the option connect to the database, then copy the database URL.
+
 ### 2. Install prisma schema
+- This means create a directory `prisma` and a schema file for prisma in it with the following command.
+
 ```bash
   npx prisma init
 ```
 
 ### 3. Create a simple user schema
+- In the `prisma/schema.prisma` file create a model using the code given below.
+
 ```postgres
   model User {
     id        Int     @id  @default(autoincrement())
@@ -511,25 +520,64 @@
 ```
 
 ### 4. Replace the `.env` with your Postgres URL
+- Replace the database URL in the `Project/.env` file.
 ```ts
 DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
 ```
 
 ### 5. Migrate the database
+- We are only building the model in `prisma/schema.prisma`, and the `npx prisma migrate dev --name init_schema` command generates the SQL to create/update the tables, saves that SQL inside a timestamped migration folder, and runs it on the database — so we don’t need to write SQL by hand.
+
+- To migrate the database `install` the `dotenv` package first and in the `prisma.config.ts` import the `dotenv` package.
+
 ```bash
-npx prisma migrate dev --name init_schema
+  # Install the dotenv file
+  npm install dotenv
+
+  # Migrate the database
+  npx prisma migrate dev --name init_schema
 ```
 
+```ts
+  /* import the dotenv package to access the database URL */
+  import "dotenv/config";
+```
+
+- The database is migrated that means table are created in the database and the logs are also stored in the migration folder.
+
 ### 6. Generate the client
+- The `npx prisma generate` command reads the `schema.prisma` and generate the client code fot the app to connect to the database.
+- Client code is what lets us connect the app to the database in the typesafe way.
+- `prisma-client-js` library helps us to create the client based on the model in the `schema.prisma`.
+
 ```bash
   npx prisma generate
 ```
 
+- The Output folder line of code should be removed from the `schema.prisma` from the generator section, otherwise the following code will not work.
+```ts
+  generator client {
+    provider = "prisma-client-js"
+    output   = "../app/generated/prisma"  ❌❌❌
+  }
+```
+
+```ts
+  import { PrismaClient } @prisma/client;
+```
+
 ### 7. Finish the SignUp Route
+- Now we can connect to the database using the client code in the Prisma in the route.ts.
+
 ```ts
   export async function POST(req: NextRequest) {
+
+      /* Get the data from the client : req */
       const body = await req.json();
-      // should add zod validation here
+    
+      /* Should add zod validation here */
+
+      /* Add the user to the database */
       const user = await client.user.create({
           data: {
               username: body.username,
@@ -539,9 +587,16 @@ npx prisma migrate dev --name init_schema
 
       console.log(user.id);
 
-      return NextResponse.json({ message: "Signed up" });
+      /* Return the response to the client back */
+      return NextResponse.json(
+        { 
+          message: "Signed up" 
+        }
+      );
   }
 ```
+
+- After this we will be able to signup from the front end and then store the data in the database.
 
 ### 8. Update the GET endpoint
 ```ts
@@ -560,18 +615,26 @@ npx prisma migrate dev --name init_schema
 
 ### 1. Current solution
 ```ts
+  /* Root Page */
   import axios from "axios";
 
   async function getUserDetails() {
     try {
+      /* Hitting the own server's HTTP endpoint while using the NextJS application */
       const response = await axios.get("http://localhost:3000/api/user")
       return response.data;
-    }  catch(e) {
-      console.log(e);
+    }
+    catch(err)
+    {
+      /* Log the error */
+      console.log(err);
     }
   }
 
+  /* Home component */
   export default async function Home() {
+
+    /* Calling the function to get the data */ 
     const userData = await getUserDetails();
 
     return (
@@ -591,28 +654,37 @@ npx prisma migrate dev --name init_schema
 ```
 
 - `getUserDetails` runs on the server. This means you’re sending a request from a server back to the server.
+- In case of the React Application this was required but in the case of the NextJS the Client and the Server component both are running on the server so we need not do this.
 
 <img src="image-14.png" width=700px>
 
 ### 2. Better Solution
 ```ts
+  /* Root Page */
   import { PrismaClient } from "@prisma/client";
 
   const client = new PrismaClient();
 
   async function getUserDetails() {
     try {
+      /* Now, we are not hitting the own API endpoint since, we are using the NextJS application */
       const user = await client.user.findFirst({});
       return {
         name: user?.username,
         email: user?.username
       }
-    }  catch(e) {
-      console.log(e);
+    }
+    catch(err)
+    {
+      /* Log the error */
+      console.log(err);
     }
   }
 
+  /* Home component */
   export default async function Home() {
+
+    /* Calling the function to get the data */ 
     const userData = await getUserDetails();
 
     return (
@@ -632,14 +704,23 @@ npx prisma migrate dev --name init_schema
 ```
 
 ## Step 11 - Singleton prisma client
+- Hot reloading happens in the NextJS application, the application re-compiles again and again even for a small change in the component.
+
+- If the component makes the call to the database, there will be too many connections to the database.
+
+- Even though this problem happens in the dev mode, but to resolve this problem we use the `singleton prisma client`.
+
+- This is for the local development only not for the development on the production.
+
 - [Reference Client](https://www.prisma.io/docs/orm/more/help-and-troubleshooting/help-articles/nextjs-prisma-client-dev-practices)
 
-### 1. Create `db/index.ts`
+### 1. Create `lib/db/index.ts`
 
 ### 2. Add a prisma client singleton inside it
 ```ts
   import { PrismaClient } from '@prisma/client'
 
+  /* This function returns a new instance to the prisma client */
   const prismaClientSingleton = () => {
     return new PrismaClient()
   }
@@ -648,16 +729,34 @@ npx prisma migrate dev --name init_schema
     var prisma: undefined | ReturnType<typeof prismaClientSingleton>
   }
 
+  /* We are using the globalThis.prisma because we are using backend otherwise we would have used the window.prisma */
   const prisma = globalThis.prisma ?? prismaClientSingleton()
 
-  export default prisma
-
   if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+  
+  export default prisma
+```
+
+```ts
+import { PrismaClient } from "../generated/prisma/client"
+
+/* This function returns a new instance to the prisma client */
+const prismaClient = () => {
+    return new PrismaClient()
+}
+
+/* We are using the globalThis.prisma because we are using backend otherwise we would have used the window.prisma */
+const prisma = globalThis.prisma ?? prismaClient()
+
+/* This problem is not in production mode it is in dev only */
+if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+
+export default prisma
 ```
 
 ### 3. Update imports of prisma everywhere
 ```ts
-  import client from "@/db"
+  import prismaClient from "../../../lib/db";
 ```
 
 ## Step 12 - Server Actions
